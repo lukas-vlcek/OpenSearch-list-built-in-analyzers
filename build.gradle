@@ -6,11 +6,11 @@ apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'opensearch.pluginzip'
 
-def pluginName = 'list-builtIn-analyzers'
-def pluginDescription = 'Custom plugin to list built-in analyzers'
+def pluginName = 'node-analyzers'
+def pluginDescription = 'Plugin to list node built-in analyzers'
 def projectPath = 'org.opensearch'
 def pathToPlugin = 'plugin.node.analyzers'
-def pluginClassName = 'ListBuiltInAnalyzersPlugin'
+def pluginClassName = 'NodeAnalyzersPlugin'
 group = "RenameGroup"
 
 publishing {

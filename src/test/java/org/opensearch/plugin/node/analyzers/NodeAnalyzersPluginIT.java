@@ -12,7 +12,6 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
-import org.opensearch.plugin.node.analyzers.ListBuiltInAnalyzersPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.test.OpenSearchIntegTestCase;
 
@@ -25,11 +24,11 @@ import static org.hamcrest.Matchers.containsString;
 
 @ThreadLeakScope(ThreadLeakScope.Scope.NONE)
 @OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
-public class ListBuiltInAnalyzersPluginIT extends OpenSearchIntegTestCase {
+public class NodeAnalyzersPluginIT extends OpenSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Collections.singletonList(ListBuiltInAnalyzersPlugin.class);
+        return Collections.singletonList(NodeAnalyzersPlugin.class);
     }
 
     public void testPluginInstalled() throws IOException, ParseException {
@@ -37,6 +36,6 @@ public class ListBuiltInAnalyzersPluginIT extends OpenSearchIntegTestCase {
         String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
 
         logger.info("response body: {}", body);
-        assertThat(body, containsString("list-builtIn-analyzers"));
+        assertThat(body, containsString("node-analyzers"));
     }
 }

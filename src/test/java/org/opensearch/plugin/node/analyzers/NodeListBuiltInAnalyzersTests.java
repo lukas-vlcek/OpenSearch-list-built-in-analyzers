@@ -9,6 +9,6 @@ package org.opensearch.plugin.node.analyzers;
 
 import org.opensearch.test.OpenSearchTestCase;
 
-public class ListBuiltInAnalyzersTests extends OpenSearchTestCase {
+public class NodeListBuiltInAnalyzersTests extends OpenSearchTestCase {
     // Add unit tests for your plugin
 }
