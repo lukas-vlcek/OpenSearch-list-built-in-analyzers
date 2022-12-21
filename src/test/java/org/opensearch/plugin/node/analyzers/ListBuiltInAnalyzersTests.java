@@ -5,10 +5,10 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.path.to.plugin;
+package org.opensearch.plugin.node.analyzers;
 
 import org.opensearch.test.OpenSearchTestCase;
 
-public class RenameTests extends OpenSearchTestCase {
+public class ListBuiltInAnalyzersTests extends OpenSearchTestCase {
     // Add unit tests for your plugin
 }

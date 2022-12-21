@@ -5,11 +5,14 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.path.to.plugin;
+package org.opensearch.plugin.node.analyzers;
 
 import org.opensearch.plugins.Plugin;
 
-
-public class RenamePlugin extends Plugin {
+/**
+ * After installing this plugin client can pull list of all built-in
+ * analyzers from OpenSearch. The list of analyzers is node-specific.
+ */
+public class ListBuiltInAnalyzersPlugin extends Plugin {
     // Implement the relevant Plugin Interfaces here
 }
