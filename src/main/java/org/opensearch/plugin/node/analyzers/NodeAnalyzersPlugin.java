@@ -7,13 +7,17 @@
  */
 package org.opensearch.plugin.node.analyzers;
 
+import org.opensearch.action.ActionRequest;
+import org.opensearch.action.ActionResponse;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.node.DiscoveryNodes;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.settings.SettingsFilter;
+import org.opensearch.plugin.action.NodeAnalyzersAction;
 import org.opensearch.plugin.action.RestNodeAnalyzersAction;
+import org.opensearch.plugin.action.TransportNodeAnalyzersAction;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.rest.RestController;
@@ -26,9 +30,23 @@ import static java.util.Collections.singletonList;
 
 /**
  * After installing this plugin client can pull list of all built-in
- * analyzers from OpenSearch. The list of analyzers is node-specific.
+ * analyzers from OpenSearch node. The list of analyzers is node-specific.
  */
 public class NodeAnalyzersPlugin extends Plugin implements ActionPlugin {
+
+    /**
+     * TODO
+     */
+    @Override
+    public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
+        return singletonList(
+                new ActionHandler<>(NodeAnalyzersAction.INSTANCE, TransportNodeAnalyzersAction.class)
+        );
+    }
+
+    /**
+     * TODO
+     */
     @Override
     public List<RestHandler> getRestHandlers(
             final Settings settings,
