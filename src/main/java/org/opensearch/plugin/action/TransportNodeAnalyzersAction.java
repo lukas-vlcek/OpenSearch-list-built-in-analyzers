@@ -7,6 +7,7 @@
  */
 package org.opensearch.plugin.action;
 
+import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.support.ActionFilters;
@@ -15,11 +16,6 @@ import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.inject.Inject;
 import org.opensearch.index.analysis.AnalysisRegistry;
-import org.opensearch.index.analysis.AnalyzerProvider;
-import org.opensearch.index.analysis.CharFilterFactory;
-import org.opensearch.index.analysis.TokenFilterFactory;
-import org.opensearch.index.analysis.TokenizerFactory;
-import org.opensearch.indices.analysis.AnalysisModule;
 import org.opensearch.plugins.AnalysisPlugin;
 import org.opensearch.plugins.PluginsService;
 import org.opensearch.tasks.Task;
@@ -30,9 +26,16 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * TODO
+ * The transport layer level of Node Analyzers Action has access to AnalysisRegistry (via binding) which can be used
+ * to get access to its internal registries of analysis components, such as: analyzers, tokenizers, tokenFilters and
+ * charFilters (and normalizers).
+ * But these are all private members thus it is necessary to use Reflection API and PrivilegedAction. This is the
+ * reason why the plugin requires appropriate security policy grants.
+ * On top of that we use PluginsService to get all plugins that implement AnalysisPlugin interface to provide more
+ * detailed information about which plugin is the provider of specific analysis component.
  */
 public class TransportNodeAnalyzersAction extends HandledTransportAction<NodeAnalyzersRequest, NodeAnalyzersResponse> {
     private PluginsService pluginsService;
@@ -40,7 +43,7 @@ public class TransportNodeAnalyzersAction extends HandledTransportAction<NodeAna
     private NodeClient nodeClient;
 
     /**
-     * TODO
+     * A constructor.
      * @param transportService TransportService
      * @param actionFilters ActionFilters
      * @param pluginsService PluginsService
@@ -82,111 +85,107 @@ public class TransportNodeAnalyzersAction extends HandledTransportAction<NodeAna
         }
         System.out.println("--------");
 
-        final PriviledgedHolder privsHolder;
+        final KeySetHolder keySetHolder;
 
         SpecialPermission.check();
-        privsHolder = AccessController.doPrivileged(new PrivilegedAction<PriviledgedHolder>() {
-            @Override
-            @SuppressForbidden(reason = "We are using reflections")
-            public PriviledgedHolder run() {
-                PriviledgedHolder holder = new PriviledgedHolder();
-                try {
+        keySetHolder = AccessController.doPrivileged((PrivilegedAction<KeySetHolder>) () -> {
+            KeySetHolder holder = new KeySetHolder();
+            try {
 
-                    Field privateAnalyzers;
-                    privateAnalyzers = AnalysisRegistry.class.getDeclaredField("analyzers");
-                    privateAnalyzers.setAccessible(true);
-                    holder.setAnalyzers((Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>>) privateAnalyzers.get(analysisRegistry));
+                Field privateAnalyzers;
+                privateAnalyzers = AnalysisRegistry.class.getDeclaredField("analyzers");
+                privateAnalyzers.setAccessible(true);
+                holder.setAnalyzersKeySet(((Map<String, Object>) privateAnalyzers.get(analysisRegistry)).keySet());
 
-                    Field privateTokenizers;
-                    privateTokenizers = AnalysisRegistry.class.getDeclaredField("tokenizers");
-                    privateTokenizers.setAccessible(true);
-                    holder.setTokenizers((Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>>) privateTokenizers.get(analysisRegistry));
+                Field privateTokenizers;
+                privateTokenizers = AnalysisRegistry.class.getDeclaredField("tokenizers");
+                privateTokenizers.setAccessible(true);
+                holder.setTokenizersKeySet(((Map<String, Object>) privateTokenizers.get(analysisRegistry)).keySet());
 
-                    Field privateTokenFilters;
-                    privateTokenFilters = AnalysisRegistry.class.getDeclaredField("tokenFilters");
-                    privateTokenFilters.setAccessible(true);
-                    holder.setTokenFilters((Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>>) privateTokenFilters.get(analysisRegistry));
+                Field privateTokenFilters;
+                privateTokenFilters = AnalysisRegistry.class.getDeclaredField("tokenFilters");
+                privateTokenFilters.setAccessible(true);
+                holder.setTokenFiltersKeySet(((Map<String, Object>) privateTokenFilters.get(analysisRegistry)).keySet());
 
-                    Field privateCharFilters;
-                    privateCharFilters = AnalysisRegistry.class.getDeclaredField("charFilters");
-                    privateCharFilters.setAccessible(true);
-                    holder.setCharFilters((Map<String, AnalysisModule.AnalysisProvider<CharFilterFactory>>) privateCharFilters.get(analysisRegistry));
+                Field privateCharFilters;
+                privateCharFilters = AnalysisRegistry.class.getDeclaredField("charFilters");
+                privateCharFilters.setAccessible(true);
+                holder.setCharFiltersKeySet(((Map<String, Object>) privateCharFilters.get(analysisRegistry)).keySet());
 
-                    Field privateNormalizers;
-                    privateNormalizers = AnalysisRegistry.class.getDeclaredField("normalizers");
-                    privateNormalizers.setAccessible(true);
-                    holder.setNormalizers((Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>>) privateNormalizers.get(analysisRegistry));
+                Field privateNormalizers;
+                privateNormalizers = AnalysisRegistry.class.getDeclaredField("normalizers");
+                privateNormalizers.setAccessible(true);
+                holder.setNormalizersKeySet(((Map<String, Object>) privateNormalizers.get(analysisRegistry)).keySet());
 
-                } catch (NoSuchFieldException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-                return holder;
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new OpenSearchException(e);
             }
+            return holder;
         });
 
         System.out.println("analyzers:");
-        System.out.println(" - " +  privsHolder.getAnalyzers().keySet());
+        System.out.println(" - " +  keySetHolder.getAnalyzersKeySet());
 
         System.out.println("tokenizers:");
-        System.out.println(" - " + privsHolder.getTokenizers().keySet());
+        System.out.println(" - " + keySetHolder.getTokenizersKeySet());
 
         System.out.println("tokenFilters:");
-        System.out.println(" - " + privsHolder.getTokenFilters().keySet());
+        System.out.println(" - " + keySetHolder.getTokenFiltersKeySet());
 
         System.out.println("charFilters:");
-        System.out.println(" - " + privsHolder.getCharFilters().keySet());
+        System.out.println(" - " + keySetHolder.getCharFiltersKeySet());
 
         System.out.println("normalizers:");
-        System.out.println(" - " + privsHolder.getNormalizers().keySet());
+        System.out.println(" - " + keySetHolder.getNormalizersKeySet());
 
         System.out.println("=================");
     }
 
-    private class PriviledgedHolder {
-        Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>> analyzers;
-        Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> tokenizers;
-        Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> tokenFilters;
-        Map<String, AnalysisModule.AnalysisProvider<CharFilterFactory>> charFilters;
-        Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>> normalizers;
+    private class KeySetHolder {
+        Set<String> analyzersKeySet;
+        Set<String> tokenizersKeySet;
+        Set<String>  tokenFiltersKeySet;
+        Set<String> charFiltersKeySet;
+        Set<String> normalizersKeySet;
 
-        public void setAnalyzers(Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>> analyzers) {
-            this.analyzers = analyzers;
+        void setAnalyzersKeySet(final Set<String> analyzersKeySet) {
+            this.analyzersKeySet = analyzersKeySet;
         }
 
-        public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>> getAnalyzers() {
-            return analyzers;
+        Set<String> getAnalyzersKeySet() {
+            return this.analyzersKeySet;
         }
 
-        public void setTokenizers(Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> tokenizers) {
-            this.tokenizers = tokenizers;
+        void setTokenizersKeySet(final Set<String> tokenizersKeySet) {
+            this.tokenizersKeySet = tokenizersKeySet;
         }
 
-        public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
-            return tokenizers;
+        Set<String> getTokenizersKeySet() {
+            return this.tokenizersKeySet;
         }
 
-        public void setTokenFilters(Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> tokenFilters) {
-            this.tokenFilters = tokenFilters;
+        void setTokenFiltersKeySet(final Set<String> tokenFiltersKeySet) {
+            this.tokenFiltersKeySet = tokenFiltersKeySet;
         }
 
-        public Map<String, AnalysisModule.AnalysisProvider<TokenFilterFactory>> getTokenFilters() {
-            return tokenFilters;
+        Set<String> getTokenFiltersKeySet() {
+            return tokenFiltersKeySet;
         }
 
-        public void setCharFilters(Map<String, AnalysisModule.AnalysisProvider<CharFilterFactory>> charFilters) {
-            this.charFilters = charFilters;
+        void setCharFiltersKeySet(final Set<String> charFiltersKeySet) {
+            this.charFiltersKeySet = charFiltersKeySet;
         }
 
-        public Map<String, AnalysisModule.AnalysisProvider<CharFilterFactory>> getCharFilters() {
-            return charFilters;
+        Set<String> getCharFiltersKeySet() {
+            return charFiltersKeySet;
         }
 
-        public void setNormalizers(Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>> normalizers) {
-            this.normalizers = normalizers;
+        void setNormalizersKeySet(final Set<String> normalizersKeySet) {
+            this.normalizersKeySet = normalizersKeySet;
         }
 
-        public Map<String, AnalysisModule.AnalysisProvider<AnalyzerProvider<?>>> getNormalizers() {
-            return normalizers;
+        Set<String> getNormalizersKeySet() {
+            return normalizersKeySet;
         }
     }
 }
