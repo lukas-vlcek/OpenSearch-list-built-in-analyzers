@@ -126,9 +126,11 @@ public class TransportNodeAnalyzersAction extends TransportNodesAction<
         Map<String, NodeAnalyzersInfo.AnalysisPluginComponents> pluginComponents= new HashMap<>();
         List<AnalysisPlugin> analysisPlugins = pluginsService.filterPlugins(AnalysisPlugin.class);
         for (AnalysisPlugin plugin: analysisPlugins) {
-            pluginComponents.put(plugin.toString(),
+            String pluginName = plugin.getClass().getCanonicalName();
+            // TODO: getCanonicalName() ^^ can lead to null for anonymous inner class. We need to find something better.
+            pluginComponents.put(pluginName,
                     new NodeAnalyzersInfo.AnalysisPluginComponents(
-                            plugin.toString(),
+                            pluginName,
                             plugin.getAnalyzers().keySet(),
                             plugin.getTokenizers().keySet(),
                             plugin.getTokenFilters().keySet(),
