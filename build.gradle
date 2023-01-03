@@ -53,7 +53,7 @@ validateNebulaPom.enabled = false
 buildscript {
     ext {
 //        opensearch.version = "2.4.1"
-        opensearch_version = System.getProperty("opensearch.version", "3.0.0-SNAPSHOT")
+        opensearch_version = System.getProperty("opensearch.version", "2.4.1")
     }
 
     repositories {

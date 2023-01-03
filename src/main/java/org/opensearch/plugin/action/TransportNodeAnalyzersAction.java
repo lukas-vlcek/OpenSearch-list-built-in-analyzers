@@ -11,6 +11,7 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
 import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
+import org.opensearch.action.support.nodes.BaseNodeRequest;
 import org.opensearch.action.support.nodes.TransportNodesAction;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.SuppressForbidden;
@@ -186,7 +187,7 @@ public class TransportNodeAnalyzersAction extends TransportNodesAction<
     /**
      * Inner node request.
      */
-    public static class NodeRequest extends TransportRequest {
+    public static class NodeRequest extends BaseNodeRequest {
         NodesAnalyzersRequest request;
 
         public NodeRequest(StreamInput in) throws IOException {
