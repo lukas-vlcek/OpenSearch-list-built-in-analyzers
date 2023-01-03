@@ -1,0 +1,159 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ */
+package org.opensearch.plugin.action;
+
+import org.opensearch.action.support.nodes.BaseNodeResponse;
+import org.opensearch.cluster.node.DiscoveryNode;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.unmodifiableSet;
+
+/**
+ * A class used to transfer node analyzers info.
+ *
+ * Every node has a set of analyzers, tokenizers, tokenFilter, charFilter and analyzers.
+ * For every AnalysisPlugin installed on the node we also get list of components provided
+ * by individual plugins.
+ */
+public class NodeAnalyzersInfo extends BaseNodeResponse {
+
+    private final Set<String> analyzersKeySet;
+    private final Set<String> tokenizersKeySet;
+    private final Set<String> tokenFiltersKeySet;
+    private final Set<String> charFiltersKeySet;
+    private final Set<String> normalizersKeySet;
+
+    private final Map<String, AnalysisPluginComponents> nodeAnalysisPlugins;
+
+    public static class AnalysisPluginComponents {
+        private final String pluginName;
+        private final Set<String> analyzersKeySet;
+        private final Set<String> tokenizersKeySet;
+        private final Set<String> tokenFiltersKeySet;
+        private final Set<String> charFiltersKeySet;
+        private final Set<String> hunspellDictionaries;
+
+        public AnalysisPluginComponents(
+                final String pluginName,
+                final Set<String> analyzersKeySet,
+                final Set<String> tokenizersKeySet,
+                final Set<String> tokenFiltersKeySet,
+                final Set<String> charFiltersKeySet,
+                final Set<String> hunspellDictionaries
+        ) {
+            this.pluginName = pluginName;
+            this.analyzersKeySet = analyzersKeySet;
+            this.tokenizersKeySet = tokenizersKeySet;
+            this.tokenFiltersKeySet = tokenFiltersKeySet;
+            this.charFiltersKeySet = charFiltersKeySet;
+            this.hunspellDictionaries = hunspellDictionaries;
+        }
+
+        public AnalysisPluginComponents(StreamInput in) throws IOException {
+            this.pluginName = in.readString();
+            this.analyzersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+            this.tokenizersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+            this.tokenFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+            this.charFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+            this.hunspellDictionaries = unmodifiableSet(in.readSet(StreamInput::readString));
+        }
+
+        public void writeTo(StreamOutput out) throws IOException {
+            out.writeString(this.pluginName);
+            out.writeStringCollection(this.analyzersKeySet);
+            out.writeStringCollection(this.tokenizersKeySet);
+            out.writeStringCollection(this.tokenFiltersKeySet);
+            out.writeStringCollection(this.charFiltersKeySet);
+            out.writeStringCollection(this.hunspellDictionaries);
+        }
+
+        public String getPluginName() {
+            return pluginName;
+        }
+        public Set<String> getAnalyzersKeySet() {
+            return analyzersKeySet;
+        }
+        public Set<String> getTokenizersKeySet() {
+            return tokenizersKeySet;
+        }
+        public Set<String> getTokenFiltersKeySet() {
+            return tokenFiltersKeySet;
+        }
+        public Set<String> getCharFiltersKeySet() {
+            return charFiltersKeySet;
+        }
+        public Set<String> getHunspellDictionaries() {
+            return hunspellDictionaries;
+        }
+    }
+
+    protected NodeAnalyzersInfo(StreamInput in) throws IOException {
+        super(in);
+        this.analyzersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+        this.tokenizersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+        this.tokenFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+        this.charFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+        this.normalizersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+        this.nodeAnalysisPlugins = unmodifiableMap(in.readMap(StreamInput::readString, AnalysisPluginComponents::new));
+    }
+
+    public NodeAnalyzersInfo(
+            final DiscoveryNode node,
+            final Set<String> analyzersKeySet,
+            final Set<String> tokenizersKeySet,
+            final Set<String> tokenFiltersKeySet,
+            final Set<String> charFiltersKeySet,
+            final Set<String> normalizersKeySet,
+            final Map<String, AnalysisPluginComponents> nodeAnalysisPlugins
+            ) {
+        super(node);
+        this.analyzersKeySet = unmodifiableSet(analyzersKeySet);
+        this.tokenizersKeySet = unmodifiableSet(tokenizersKeySet);
+        this.tokenFiltersKeySet = unmodifiableSet(tokenFiltersKeySet);
+        this.charFiltersKeySet = unmodifiableSet(charFiltersKeySet);
+        this.normalizersKeySet = unmodifiableSet(normalizersKeySet);
+        this.nodeAnalysisPlugins = unmodifiableMap(nodeAnalysisPlugins);
+    }
+
+    public Set<String> getAnalyzersKeySet() {
+        return this.analyzersKeySet;
+    }
+    public Set<String> getTokenizersKeySet() {
+        return this.tokenizersKeySet;
+    }
+    public Set<String> getTokenFiltersKeySet() {
+        return this.tokenFiltersKeySet;
+    }
+    public Set<String> getCharFiltersKeySet() {
+        return this.charFiltersKeySet;
+    }
+    public Set<String> getNormalizersKeySet() {
+        return this.normalizersKeySet;
+    }
+
+    public Map<String, AnalysisPluginComponents> getNodeAnalysisPlugins() {
+        return nodeAnalysisPlugins;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        super.writeTo(out);
+        out.writeStringCollection(this.analyzersKeySet);
+        out.writeStringCollection(this.tokenizersKeySet);
+        out.writeStringCollection(this.tokenFiltersKeySet);
+        out.writeStringCollection(this.charFiltersKeySet);
+        out.writeStringCollection(this.normalizersKeySet);
+        out.writeMap(this.nodeAnalysisPlugins, StreamOutput::writeString, (o, s) -> s.writeTo(o));
+    }
+}

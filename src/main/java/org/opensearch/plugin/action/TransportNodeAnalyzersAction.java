@@ -9,21 +9,26 @@ package org.opensearch.plugin.action;
 
 import org.opensearch.OpenSearchException;
 import org.opensearch.SpecialPermission;
-import org.opensearch.action.ActionListener;
+import org.opensearch.action.FailedNodeException;
 import org.opensearch.action.support.ActionFilters;
-import org.opensearch.action.support.HandledTransportAction;
-import org.opensearch.client.node.NodeClient;
+import org.opensearch.action.support.nodes.TransportNodesAction;
+import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.SuppressForbidden;
 import org.opensearch.common.inject.Inject;
+import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.index.analysis.AnalysisRegistry;
 import org.opensearch.plugins.AnalysisPlugin;
 import org.opensearch.plugins.PluginsService;
-import org.opensearch.tasks.Task;
+import org.opensearch.threadpool.ThreadPool;
+import org.opensearch.transport.TransportRequest;
 import org.opensearch.transport.TransportService;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,61 +42,57 @@ import java.util.Set;
  * On top of that we use PluginsService to get all plugins that implement AnalysisPlugin interface to provide more
  * detailed information about which plugin is the provider of specific analysis component.
  */
-public class TransportNodeAnalyzersAction extends HandledTransportAction<NodeAnalyzersRequest, NodeAnalyzersResponse> {
+public class TransportNodeAnalyzersAction extends TransportNodesAction<
+        NodesAnalyzersRequest,
+        NodesAnalyzersResponse,
+        TransportNodeAnalyzersAction.NodeRequest,
+        NodeAnalyzersInfo> {
     private PluginsService pluginsService;
     private AnalysisRegistry analysisRegistry;
-    private NodeClient nodeClient;
 
     /**
      * A constructor.
-     * @param transportService TransportService
-     * @param actionFilters ActionFilters
-     * @param pluginsService PluginsService
-     * @param analysisRegistry AnalysisRegistry
-     * @param nodeClient NodeClient
+     * @param transportService  TransportService
+     * @param actionFilters     ActionFilters
+     * @param pluginsService    PluginsService
+     * @param analysisRegistry  AnalysisRegistry
      */
     @Inject
-    public TransportNodeAnalyzersAction(TransportService transportService, ActionFilters actionFilters,
-                                        PluginsService pluginsService, AnalysisRegistry analysisRegistry,
-                                        NodeClient nodeClient) {
-        super(NodeAnalyzersAction.NAME, transportService, actionFilters, NodeAnalyzersRequest::new);
+    public TransportNodeAnalyzersAction(
+            ThreadPool threadPool,
+            ClusterService clusterService,
+            TransportService transportService,
+            ActionFilters actionFilters,
+            PluginsService pluginsService,
+            AnalysisRegistry analysisRegistry
+    ) {
+        super(
+                NodeAnalyzersAction.NAME,
+                threadPool,
+                clusterService,
+                transportService,
+                actionFilters,
+                NodesAnalyzersRequest::new,
+                NodeRequest::new,
+                ThreadPool.Names.GENERIC,
+                NodeAnalyzersInfo.class
+        );
         this.pluginsService = pluginsService;
         this.analysisRegistry = analysisRegistry;
-        this.nodeClient = nodeClient;
     }
 
     /**
-     * TODO
-     * @param task Task
-     * @param request Request
-     * @param actionListener ActionListener
+     * @param nodeRequest
+     * @return
      */
     @Override
-    @SuppressForbidden(reason = "System.out just for now")
-    protected void doExecute(Task task, NodeAnalyzersRequest request, ActionListener<NodeAnalyzersResponse> actionListener) {
-        System.out.println("=================");
-        System.out.println("Local node Id:");
-        System.out.println(nodeClient.getLocalNodeId());
-
-        System.out.println("--------");
-        List<AnalysisPlugin> analysisPlugins = pluginsService.filterPlugins(AnalysisPlugin.class);
-        for (AnalysisPlugin plugin: analysisPlugins) {
-            System.out.println(" - " + plugin.toString());
-            System.out.println(" - analyzers: " + plugin.getAnalyzers().keySet());
-            System.out.println(" - tokenizers: " + plugin.getTokenizers().keySet());
-            System.out.println(" - tokenFilters: " + plugin.getTokenFilters().keySet());
-            System.out.println(" - charFilters: " + plugin.getCharFilters().keySet());
-            System.out.println(" - hunspellDictionaries: " + plugin.getHunspellDictionaries().keySet());
-        }
-        System.out.println("--------");
-
+    @SuppressForbidden(reason = "We have to use reflection API")
+    protected NodeAnalyzersInfo nodeOperation(NodeRequest nodeRequest) {
         final KeySetHolder keySetHolder;
-
         SpecialPermission.check();
         keySetHolder = AccessController.doPrivileged((PrivilegedAction<KeySetHolder>) () -> {
             KeySetHolder holder = new KeySetHolder();
             try {
-
                 Field privateAnalyzers;
                 privateAnalyzers = AnalysisRegistry.class.getDeclaredField("analyzers");
                 privateAnalyzers.setAccessible(true);
@@ -122,23 +123,84 @@ public class TransportNodeAnalyzersAction extends HandledTransportAction<NodeAna
             }
             return holder;
         });
+        Map<String, NodeAnalyzersInfo.AnalysisPluginComponents> pluginComponents= new HashMap<>();
+        List<AnalysisPlugin> analysisPlugins = pluginsService.filterPlugins(AnalysisPlugin.class);
+        for (AnalysisPlugin plugin: analysisPlugins) {
+            pluginComponents.put(plugin.toString(),
+                    new NodeAnalyzersInfo.AnalysisPluginComponents(
+                            plugin.toString(),
+                            plugin.getAnalyzers().keySet(),
+                            plugin.getTokenizers().keySet(),
+                            plugin.getTokenFilters().keySet(),
+                            plugin.getCharFilters().keySet(),
+                            plugin.getHunspellDictionaries().keySet()
+                    ));
+        }
+        return new NodeAnalyzersInfo(
+                clusterService.localNode(),
+                keySetHolder.analyzersKeySet,
+                keySetHolder.tokenizersKeySet,
+                keySetHolder.tokenFiltersKeySet,
+                keySetHolder.charFiltersKeySet,
+                keySetHolder.normalizersKeySet,
+                pluginComponents
+        );
+    }
 
-        System.out.println("analyzers:");
-        System.out.println(" - " +  keySetHolder.getAnalyzersKeySet());
+    /**
+     * @param nodesRequest
+     * @param nodeResponses
+     * @param nodeFailures
+     * @return
+     */
+    @Override
+    protected NodesAnalyzersResponse newResponse(
+            NodesAnalyzersRequest nodesRequest,
+            List<NodeAnalyzersInfo> nodeResponses,
+            List<FailedNodeException> nodeFailures
+    ) {
+        return new NodesAnalyzersResponse(clusterService.getClusterName(), nodeResponses, nodeFailures);
+    }
 
-        System.out.println("tokenizers:");
-        System.out.println(" - " + keySetHolder.getTokenizersKeySet());
+    /**
+     * @param nodesRequest
+     * @return
+     */
+    @Override
+    protected NodeRequest newNodeRequest(NodesAnalyzersRequest nodesRequest) {
+        return new NodeRequest(nodesRequest);
+    }
 
-        System.out.println("tokenFilters:");
-        System.out.println(" - " + keySetHolder.getTokenFiltersKeySet());
+    /**
+     * @param in
+     * @return
+     * @throws IOException
+     */
+    @Override
+    protected NodeAnalyzersInfo newNodeResponse(StreamInput in) throws IOException {
+        return new NodeAnalyzersInfo(in);
+    }
 
-        System.out.println("charFilters:");
-        System.out.println(" - " + keySetHolder.getCharFiltersKeySet());
+    /**
+     * Inner node request.
+     */
+    public static class NodeRequest extends TransportRequest {
+        NodesAnalyzersRequest request;
 
-        System.out.println("normalizers:");
-        System.out.println(" - " + keySetHolder.getNormalizersKeySet());
+        public NodeRequest(StreamInput in) throws IOException {
+            super(in);
+            this.request = new NodesAnalyzersRequest(in);
+        }
 
-        System.out.println("=================");
+        NodeRequest(NodesAnalyzersRequest request) {
+            this.request = request;
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            super.writeTo(out);
+            request.writeTo(out);
+        }
     }
 
     private class KeySetHolder {

@@ -10,24 +10,21 @@ package org.opensearch.plugin.action;
 import org.opensearch.action.ActionType;
 
 /**
- * TODO
+ * ActionType for retrieving a analyzer components.
  */
-public class NodeAnalyzersAction extends ActionType<NodeAnalyzersResponse> {
+public class NodeAnalyzersAction extends ActionType<NodesAnalyzersResponse> {
 
     /**
-     * TODO
+     * A node level singleton.
      */
     public static final NodeAnalyzersAction INSTANCE = new NodeAnalyzersAction();
 
     /**
-     * TODO
+     * The name of the action type.
      */
     public static final String NAME = "cluster:monitor/node/analyzers";
 
-    /**
-     * TODO
-     */
-    public NodeAnalyzersAction() {
-        super(NAME, NodeAnalyzersResponse::new);
+    private NodeAnalyzersAction() {
+        super(NAME, NodesAnalyzersResponse::new);
     }
 }

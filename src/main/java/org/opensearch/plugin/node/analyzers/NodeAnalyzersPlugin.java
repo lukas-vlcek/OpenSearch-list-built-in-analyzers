@@ -16,7 +16,7 @@ import org.opensearch.common.settings.IndexScopedSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.settings.SettingsFilter;
 import org.opensearch.plugin.action.NodeAnalyzersAction;
-import org.opensearch.plugin.action.RestNodeAnalyzersAction;
+import org.opensearch.rest.action.admin.cluster.RestNodeAnalyzersAction;
 import org.opensearch.plugin.action.TransportNodeAnalyzersAction;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.Plugin;
