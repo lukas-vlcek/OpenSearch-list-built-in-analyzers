@@ -6,11 +6,13 @@ When this plugin is installed on OpenSearch node it adds a new REST endpoint `/_
 
 The output also includes a list of all AnalysisPlugin(s) available on that node listing all relevant analysis components introduced by each individual plugin.
 
-This plugin is a WIP.
-
 If this functionality will be found useful then it may find its way directly into OpenSearch "core" and this repository will be archived.
 
-There is no other info available here atm.
+## Notice
+
+- This plugin is a WIP.
+- A lot of tests are missing.
+
 
 ### Running the tests
 
