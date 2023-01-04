@@ -52,22 +52,22 @@ public class NodesAnalyzersResponse extends BaseNodesResponse<NodeAnalyzersInfo>
         builder.startObject("nodes");
         for (NodeAnalyzersInfo nodeInfo: getNodes()) {
             builder.startObject(nodeInfo.getNode().getId());
-            builder.array("analyzers", nodeInfo.getAnalyzersKeySet());
-            builder.array("tokenizers", nodeInfo.getTokenizersKeySet());
-            builder.array("tokenFilters", nodeInfo.getTokenFiltersKeySet());
-            builder.array("charFilters", nodeInfo.getCharFiltersKeySet());
-            builder.array("normalizers", nodeInfo.getNormalizersKeySet());
+            builder.field("analyzers").value(nodeInfo.getAnalyzersKeySet());
+            builder.field("tokenizers").value(nodeInfo.getTokenizersKeySet());
+            builder.field("tokenFilters").value(nodeInfo.getTokenFiltersKeySet());
+            builder.field("charFilters").value(nodeInfo.getCharFiltersKeySet());
+            builder.field("normalizers").value(nodeInfo.getNormalizersKeySet());
 
             builder.startObject("plugins");
             for (String plugin : nodeInfo.getNodeAnalysisPlugins().keySet()) {
                 NodeAnalyzersInfo.AnalysisPluginComponents pluginComponents = nodeInfo.getNodeAnalysisPlugins().get(plugin);
                 builder.startObject("plugin");
                 builder.field("name", pluginComponents.getPluginName());
-                builder.array("analyzers", pluginComponents.getAnalyzersKeySet());
-                builder.array("tokenizers", pluginComponents.getTokenizersKeySet());
-                builder.array("tokenFilters", pluginComponents.getTokenFiltersKeySet());
-                builder.array("charFilters", pluginComponents.getCharFiltersKeySet());
-                builder.array("hunspellDictionaries", pluginComponents.getHunspellDictionaries());
+                builder.field("analyzers").value(pluginComponents.getAnalyzersKeySet());
+                builder.field("tokenizers").value(pluginComponents.getTokenizersKeySet());
+                builder.field("tokenFilters").value(pluginComponents.getTokenFiltersKeySet());
+                builder.field("charFilters").value(pluginComponents.getCharFiltersKeySet());
+                builder.field("hunspellDictionaries").value(pluginComponents.getHunspellDictionaries());
                 builder.endObject();
             }
             builder.endObject();

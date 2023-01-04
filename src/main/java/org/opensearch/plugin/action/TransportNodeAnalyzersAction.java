@@ -128,6 +128,7 @@ public class TransportNodeAnalyzersAction extends TransportNodesAction<
         for (AnalysisPlugin plugin: analysisPlugins) {
             String pluginName = plugin.getClass().getCanonicalName();
             // TODO: getCanonicalName() ^^ can lead to null for anonymous inner class. We need to find something better.
+            // See: <https://github.com/lukas-vlcek/OpenSearch-list-built-in-analyzers/issues/3>
             pluginComponents.put(pluginName,
                     new NodeAnalyzersInfo.AnalysisPluginComponents(
                             pluginName,
