@@ -15,9 +15,11 @@ import org.opensearch.common.io.stream.StreamOutput;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Collections.unmodifiableSet;
+import static java.util.Collections.unmodifiableSortedSet;
 
 /**
  * A class used to transfer node analyzers info.
@@ -28,21 +30,21 @@ import static java.util.Collections.unmodifiableSet;
  */
 public class NodeAnalyzersInfo extends BaseNodeResponse {
 
-    private final Set<String> analyzersKeySet;
-    private final Set<String> tokenizersKeySet;
-    private final Set<String> tokenFiltersKeySet;
-    private final Set<String> charFiltersKeySet;
-    private final Set<String> normalizersKeySet;
+    private final SortedSet<String> analyzersKeySet;
+    private final SortedSet<String> tokenizersKeySet;
+    private final SortedSet<String> tokenFiltersKeySet;
+    private final SortedSet<String> charFiltersKeySet;
+    private final SortedSet<String> normalizersKeySet;
 
     private final Map<String, AnalysisPluginComponents> nodeAnalysisPlugins;
 
-    public static class AnalysisPluginComponents {
+    public static class AnalysisPluginComponents implements Comparable<AnalysisPluginComponents> {
         private final String pluginName;
-        private final Set<String> analyzersKeySet;
-        private final Set<String> tokenizersKeySet;
-        private final Set<String> tokenFiltersKeySet;
-        private final Set<String> charFiltersKeySet;
-        private final Set<String> hunspellDictionaries;
+        private final SortedSet<String> analyzersKeySet;
+        private final SortedSet<String> tokenizersKeySet;
+        private final SortedSet<String> tokenFiltersKeySet;
+        private final SortedSet<String> charFiltersKeySet;
+        private final SortedSet<String> hunspellDictionaries;
 
         public AnalysisPluginComponents(
                 final String pluginName,
@@ -53,20 +55,20 @@ public class NodeAnalyzersInfo extends BaseNodeResponse {
                 final Set<String> hunspellDictionaries
         ) {
             this.pluginName = pluginName;
-            this.analyzersKeySet = analyzersKeySet;
-            this.tokenizersKeySet = tokenizersKeySet;
-            this.tokenFiltersKeySet = tokenFiltersKeySet;
-            this.charFiltersKeySet = charFiltersKeySet;
-            this.hunspellDictionaries = hunspellDictionaries;
+            this.analyzersKeySet = unmodifiableSortedSet(new TreeSet<>(analyzersKeySet));
+            this.tokenizersKeySet = unmodifiableSortedSet(new TreeSet<>(tokenizersKeySet));
+            this.tokenFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(tokenFiltersKeySet));
+            this.charFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(charFiltersKeySet));
+            this.hunspellDictionaries = unmodifiableSortedSet(new TreeSet<>(hunspellDictionaries));
         }
 
         public AnalysisPluginComponents(StreamInput in) throws IOException {
             this.pluginName = in.readString();
-            this.analyzersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-            this.tokenizersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-            this.tokenFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-            this.charFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-            this.hunspellDictionaries = unmodifiableSet(in.readSet(StreamInput::readString));
+            this.analyzersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            this.tokenizersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            this.tokenFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            this.charFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            this.hunspellDictionaries = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
         }
 
         public void writeTo(StreamOutput out) throws IOException {
@@ -96,15 +98,25 @@ public class NodeAnalyzersInfo extends BaseNodeResponse {
         public Set<String> getHunspellDictionaries() {
             return hunspellDictionaries;
         }
+
+        /**
+         * @param o the object to be compared.
+         * @return
+         */
+        @Override
+        public int compareTo(AnalysisPluginComponents o) {
+            // TODO: Define better compare function.
+            return this.pluginName.compareTo(o.pluginName);
+        }
     }
 
     protected NodeAnalyzersInfo(StreamInput in) throws IOException {
         super(in);
-        this.analyzersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-        this.tokenizersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-        this.tokenFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-        this.charFiltersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
-        this.normalizersKeySet = unmodifiableSet(in.readSet(StreamInput::readString));
+        this.analyzersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+        this.tokenizersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+        this.tokenFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+        this.charFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+        this.normalizersKeySet = unmodifiableSortedSet(new TreeSet<>(in.readSet(StreamInput::readString)));
         this.nodeAnalysisPlugins = unmodifiableMap(in.readMap(StreamInput::readString, AnalysisPluginComponents::new));
     }
 
@@ -118,11 +130,11 @@ public class NodeAnalyzersInfo extends BaseNodeResponse {
             final Map<String, AnalysisPluginComponents> nodeAnalysisPlugins
             ) {
         super(node);
-        this.analyzersKeySet = unmodifiableSet(analyzersKeySet);
-        this.tokenizersKeySet = unmodifiableSet(tokenizersKeySet);
-        this.tokenFiltersKeySet = unmodifiableSet(tokenFiltersKeySet);
-        this.charFiltersKeySet = unmodifiableSet(charFiltersKeySet);
-        this.normalizersKeySet = unmodifiableSet(normalizersKeySet);
+        this.analyzersKeySet = unmodifiableSortedSet(new TreeSet<>(analyzersKeySet));
+        this.tokenizersKeySet = unmodifiableSortedSet(new TreeSet<>(tokenizersKeySet));
+        this.tokenFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(tokenFiltersKeySet));
+        this.charFiltersKeySet = unmodifiableSortedSet(new TreeSet<>(charFiltersKeySet));
+        this.normalizersKeySet = unmodifiableSortedSet(new TreeSet<>(normalizersKeySet));
         this.nodeAnalysisPlugins = unmodifiableMap(nodeAnalysisPlugins);
     }
 

@@ -100,6 +100,11 @@ testClusters.integTest {
     plugin(project.tasks.bundlePlugin.archiveFile)
 }
 
+// We should be able to do this later if the code is part of the core.
+//testClusters.all {
+//    module ':plugins:analysis-icu'
+//}
+
 run {
     useCluster testClusters.integTest
 }

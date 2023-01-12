@@ -1,0 +1,31 @@
+{
+  "nodes.analyzers":{
+    "documentation":{
+      "url":"https://github.com/lukas-vlcek/OpenSearch-list-built-in-analyzers",
+      "description":"Returns information about analyzer components available on nodes."
+    },
+    "stability":"experimental",
+    "url":{
+      "paths":[
+        {
+          "path":"/_nodes/analyzers",
+          "methods":[
+            "GET"
+          ]
+        },
+        {
+          "path":"/_nodes/{node_id}/analyzers",
+          "methods":[
+            "GET"
+          ],
+          "parts":{
+            "node_id":{
+              "type":"list",
+              "description":"A comma-separated list of node IDs or names to limit the returned information; use `_local` to return information from the node you're connecting to, leave empty to get information from all nodes."
+            }
+          }
+        }
+      ]
+    }
+  }
+}

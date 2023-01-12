@@ -1,0 +1,42 @@
+setup:
+  - skip:
+      features: [arbitrary_key]
+---
+"Verify structure of the response":
+  - do:
+      nodes.analyzers: {}
+
+  - length: { nodes: 1 }
+
+  - set:
+      nodes._arbitrary_key_: node_id
+
+  - is_true: nodes.$node_id.analyzers
+  - is_true: nodes.$node_id.tokenizers
+  - is_true: nodes.$node_id.tokenFilters
+  - is_true: nodes.$node_id.charFilters
+  - is_true: nodes.$node_id.normalizers
+  - is_true: nodes.$node_id.plugins
+
+  - length: { nodes.$node_id.analyzers: 6 }
+  - length: { nodes.$node_id.tokenizers: 1 }
+  - length: { nodes.$node_id.tokenFilters: 4 }
+  - length: { nodes.$node_id.charFilters: 0 }
+  - length: { nodes.$node_id.normalizers: 1 }
+
+  # Items are sorted.
+  - match: { nodes.$node_id.analyzers.0: "default" }
+  - match: { nodes.$node_id.analyzers.1: "keyword" }
+  - match: { nodes.$node_id.analyzers.2: "simple" }
+  - match: { nodes.$node_id.analyzers.3: "standard" }
+  - match: { nodes.$node_id.analyzers.4: "stop" }
+  - match: { nodes.$node_id.analyzers.5: "whitespace" }
+
+  - match: { nodes.$node_id.tokenizers.0: "standard" }
+
+  - match: { nodes.$node_id.tokenFilters.0: "hunspell" }
+  - match: { nodes.$node_id.tokenFilters.1: "shingle" }
+  - match: { nodes.$node_id.tokenFilters.2: "standard" }
+  - match: { nodes.$node_id.tokenFilters.3: "stop" }
+
+  - match: { nodes.$node_id.normalizers.0: "lowercase" }
