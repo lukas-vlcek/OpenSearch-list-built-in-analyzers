@@ -8,3 +8,5 @@
  */
 
 rootProject.name = 'ListBuiltInAnalyzers'
+include 'testPlugin_01'
+include 'testPlugin_02'

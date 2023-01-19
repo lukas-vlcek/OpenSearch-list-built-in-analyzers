@@ -11,7 +11,7 @@ def pluginDescription = 'Plugin to list node built-in analyzers'
 def projectPath = 'org.opensearch'
 def pathToPlugin = 'plugin.node.analyzers'
 def pluginClassName = 'NodeAnalyzersPlugin'
-group = "RenameGroup"
+group = "org.opensearch"
 
 publishing {
     publications {
@@ -100,10 +100,12 @@ testClusters.integTest {
     plugin(project.tasks.bundlePlugin.archiveFile)
 }
 
-// We should be able to do this later if the code is part of the core.
-//testClusters.all {
-//    module ':plugins:analysis-icu'
-//}
+// Include testing plugins into the cluster. These are AnalysisPlugin(s) and they provide analysis components.
+testClusters.all {
+    numberOfNodes = 2
+    module ':testPlugin_01'
+    module ':testPlugin_02'
+}
 
 run {
     useCluster testClusters.integTest
@@ -118,5 +120,10 @@ task updateVersion {
          // String tokenization to support -SNAPSHOT
         ant.replaceregexp(file:'build.gradle', match: '"opensearch.version", "\\d.*"', replace: '"opensearch.version", "' + newVersion.tokenize('-')[0] + '-SNAPSHOT"', flags:'g', byline:true)
     }
+}
+
+dependencies {
+    testRuntimeOnly project(':testPlugin_01')
+    testRuntimeOnly project(':testPlugin_02')
 }
 
