@@ -5,4 +5,4 @@
         h: component
 
   - match:
-      $body: /^node\-analyzers\n$/
+      $body: /^node\-analyzers\nnode\-analyzers\n$/

@@ -58,10 +58,10 @@ public class NodesAnalyzersResponse extends BaseNodesResponse<NodeAnalyzersInfo>
             builder.field("charFilters").value(nodeInfo.getCharFiltersKeySet());
             builder.field("normalizers").value(nodeInfo.getNormalizersKeySet());
 
-            builder.startObject("plugins");
+            builder.startArray("plugins");
             for (String plugin : nodeInfo.getNodeAnalysisPlugins().keySet()) {
                 NodeAnalyzersInfo.AnalysisPluginComponents pluginComponents = nodeInfo.getNodeAnalysisPlugins().get(plugin);
-                builder.startObject("plugin");
+                builder.startObject();
                 builder.field("name", pluginComponents.getPluginName());
                 builder.field("analyzers").value(pluginComponents.getAnalyzersKeySet());
                 builder.field("tokenizers").value(pluginComponents.getTokenizersKeySet());
@@ -70,7 +70,7 @@ public class NodesAnalyzersResponse extends BaseNodesResponse<NodeAnalyzersInfo>
                 builder.field("hunspellDictionaries").value(pluginComponents.getHunspellDictionaries());
                 builder.endObject();
             }
-            builder.endObject();
+            builder.endArray();
 
             builder.endObject();
         }

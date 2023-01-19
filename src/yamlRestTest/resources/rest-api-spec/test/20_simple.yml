@@ -6,7 +6,7 @@ setup:
   - do:
       nodes.analyzers: {}
 
-  - length: { nodes: 1 }
+  - length: { nodes: 2 }
 
   - set:
       nodes._arbitrary_key_: node_id
@@ -19,10 +19,11 @@ setup:
   - is_true: nodes.$node_id.plugins
 
   - length: { nodes.$node_id.analyzers: 6 }
-  - length: { nodes.$node_id.tokenizers: 1 }
-  - length: { nodes.$node_id.tokenFilters: 4 }
+  - length: { nodes.$node_id.tokenizers: 3 }
+  - length: { nodes.$node_id.tokenFilters: 6 }
   - length: { nodes.$node_id.charFilters: 0 }
   - length: { nodes.$node_id.normalizers: 1 }
+  - length: { nodes.$node_id.plugins: 2 }
 
   # Items are sorted.
   - match: { nodes.$node_id.analyzers.0: "default" }
@@ -33,10 +34,36 @@ setup:
   - match: { nodes.$node_id.analyzers.5: "whitespace" }
 
   - match: { nodes.$node_id.tokenizers.0: "standard" }
+  - match: { nodes.$node_id.tokenizers.1: "xx_test_01_tokenizer" }
+  - match: { nodes.$node_id.tokenizers.2: "xx_test_02_tokenizer" }
 
   - match: { nodes.$node_id.tokenFilters.0: "hunspell" }
   - match: { nodes.$node_id.tokenFilters.1: "shingle" }
   - match: { nodes.$node_id.tokenFilters.2: "standard" }
   - match: { nodes.$node_id.tokenFilters.3: "stop" }
+  - match: { nodes.$node_id.tokenFilters.4: "xx_test_01_tokenFilter" }
+  - match: { nodes.$node_id.tokenFilters.5: "xx_test_02_tokenFilter" }
 
   - match: { nodes.$node_id.normalizers.0: "lowercase" }
+
+  # Verify plugins
+  # First plugin
+  - is_true: nodes.$node_id.plugins.0.name
+  - is_true: nodes.$node_id.plugins.0.analyzers
+  - is_true: nodes.$node_id.plugins.0.tokenizers
+  - is_true: nodes.$node_id.plugins.0.tokenFilters
+  - is_true: nodes.$node_id.plugins.0.charFilters
+  - is_true: nodes.$node_id.plugins.0.hunspellDictionaries
+
+  - match: { nodes.$node_id.plugins.0.name: "org.opensearch.plugin.Test01AnalysisPlugin" }
+  - length: { nodes.$node_id.plugins.0.analyzers: 0 }
+  - length: { nodes.$node_id.plugins.0.tokenizers: 1 }
+  - length: { nodes.$node_id.plugins.0.tokenFilters: 1 }
+  - length: { nodes.$node_id.plugins.0.charFilters: 0 }
+  - length: { nodes.$node_id.plugins.0.hunspellDictionaries: 0 }
+
+  - match: { nodes.$node_id.plugins.0.tokenizers.0: "xx_test_01_tokenizer" }
+  - match: { nodes.$node_id.plugins.0.tokenFilters.0: "xx_test_01_tokenFilter" }
+
+  # Second plugin
+  - match: { nodes.$node_id.plugins.1.name: "org.opensearch.plugin.Test02AnalysisPlugin" }
