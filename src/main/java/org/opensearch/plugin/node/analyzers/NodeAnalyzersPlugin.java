@@ -8,20 +8,20 @@
 package org.opensearch.plugin.node.analyzers;
 
 import org.opensearch.action.ActionRequest;
-import org.opensearch.action.ActionResponse;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.node.DiscoveryNodes;
 import org.opensearch.common.settings.ClusterSettings;
 import org.opensearch.common.settings.IndexScopedSettings;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.settings.SettingsFilter;
+import org.opensearch.core.action.ActionResponse;
 import org.opensearch.plugin.action.NodeAnalyzersAction;
-import org.opensearch.rest.action.admin.cluster.RestNodeAnalyzersAction;
 import org.opensearch.plugin.action.TransportNodeAnalyzersAction;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.rest.RestController;
 import org.opensearch.rest.RestHandler;
+import org.opensearch.rest.action.admin.cluster.RestNodeAnalyzersAction;
 
 import java.util.List;
 import java.util.function.Supplier;
