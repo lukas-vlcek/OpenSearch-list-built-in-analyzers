@@ -8,7 +8,7 @@
 package org.opensearch.plugin.action;
 
 import org.opensearch.action.support.nodes.BaseNodesRequest;
-import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamInput;
 
 import java.io.IOException;
 
